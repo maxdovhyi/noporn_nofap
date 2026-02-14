@@ -1,9 +1,9 @@
 {
-  "name": "NoPorn / NoFap",
-  "short_name": "NoFap",
-  "description": "Ежедневный трекер чистых дней",
-  "theme_color": "#0f172a",
-  "background_color": "#f8fafc",
+  "name": "🛡️ NoPorn",
+  "short_name": "NoPorn",
+  "description": "NoFap tracker — offline PWA",
+  "theme_color": "#020617",
+  "background_color": "#020617",
   "display": "standalone",
   "start_url": "/nofap",
   "icons": [

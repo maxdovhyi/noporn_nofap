@@ -3,13 +3,13 @@ import './globals.css';
 import { ServiceWorkerRegister } from './service-worker-register';
 
 export const metadata: Metadata = {
-  title: 'NoPorn / NoFap',
-  description: 'MVP трекер чистых дней',
+  title: '🛡️ NoPorn',
+  description: 'Offline NoFap tracker',
   manifest: '/manifest.webmanifest',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0f172a',
+  themeColor: '#020617',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,81 +1,66 @@
-export type NofapStatus = 'clean' | 'slip';
+import { shiftISODate } from './date';
 
-export type NofapRecord = {
-  day: string;
-  status: NofapStatus;
+export type DayStatus = 'clean' | 'slip';
+
+export type NopnofStore = {
+  version: 1;
+  days: Record<string, DayStatus>;
 };
 
-function sortByDayAsc(records: NofapRecord[]): NofapRecord[] {
-  return [...records].sort((a, b) => a.day.localeCompare(b.day));
+export function buildLast30DayKeys(todayKey: string): string[] {
+  return Array.from({ length: 30 }, (_, i) => shiftISODate(todayKey, -(29 - i)));
 }
 
-export function computeStreak(records: NofapRecord[], todayDate: string): number {
-  const byDay = new Map(records.map((record) => [record.day, record.status]));
-
-  if (byDay.get(todayDate) === 'slip') {
-    return 0;
-  }
-
+export function computeStreak(days: Record<string, DayStatus>, todayKey: string): number {
   let streak = 0;
-  let cursor = new Date(`${todayDate}T00:00:00`);
+  let cursor = todayKey;
 
-  while (true) {
-    const day = cursor.toISOString().slice(0, 10);
-    if (byDay.get(day) !== 'clean') {
-      break;
-    }
-
+  while (days[cursor] === 'clean') {
     streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
+    cursor = shiftISODate(cursor, -1);
   }
 
   return streak;
 }
 
-export function computeBestStreak(records: NofapRecord[]): number {
-  const sorted = sortByDayAsc(records);
-  let current = 0;
+export function computeBestStreak(days: Record<string, DayStatus>): number {
+  const keys = Object.keys(days).sort();
   let best = 0;
-  let prevDate: Date | null = null;
+  let current = 0;
+  let prev: string | null = null;
 
-  for (const record of sorted) {
-    const date = new Date(`${record.day}T00:00:00`);
-
-    if (record.status === 'slip') {
+  for (const key of keys) {
+    if (days[key] === 'slip') {
       current = 0;
-      prevDate = date;
+      prev = key;
       continue;
     }
 
-    if (!prevDate) {
+    if (!prev) {
       current = 1;
     } else {
-      const diff = Math.round((date.getTime() - prevDate.getTime()) / 86400000);
-      current = diff === 1 ? current + 1 : 1;
+      current = shiftISODate(prev, 1) === key ? current + 1 : 1;
     }
 
     best = Math.max(best, current);
-    prevDate = date;
+    prev = key;
   }
 
   return best;
 }
 
-export function compute30d(records: NofapRecord[], todayDate: string): { pct30: number; loggedDays30: number } {
-  const today = new Date(`${todayDate}T00:00:00`);
-  const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() - 29);
-
-  const within30 = records.filter((record) => {
-    const date = new Date(`${record.day}T00:00:00`);
-    return date >= minDate && date <= today;
-  });
-
-  const loggedDays30 = within30.length;
-  const cleanDays = within30.filter((record) => record.status === 'clean').length;
+export function compute30d(days: Record<string, DayStatus>, todayKey: string): {
+  pct30: number;
+  loggedDays30: number;
+  cleanCount: number;
+} {
+  const keys = buildLast30DayKeys(todayKey);
+  const cleanCount = keys.filter((key) => days[key] === 'clean').length;
+  const loggedDays30 = keys.filter((key) => days[key]).length;
 
   return {
-    pct30: loggedDays30 ? Math.round((cleanDays / loggedDays30) * 100) : 0,
+    pct30: Math.round((cleanCount / 30) * 100),
     loggedDays30,
+    cleanCount,
   };
 }
